@@ -14,6 +14,8 @@ export interface Options {
   timeout?: number
   highlighter?: Highlighter
   highlightLines?: boolean
+  parseFilename?: boolean
+  filenameRe?: RegExp
 }
 
 function getThemeName(theme: IThemeRegistration) {
@@ -22,7 +24,9 @@ function getThemeName(theme: IThemeRegistration) {
   return (theme as IShikiTheme).name
 }
 
-const RE = /{([\d,-]+)}/
+const HIGHLIGHT_RE = /{([\d,-]+)}/
+const FILENAME_RE = /filename="([\w.\-_]+)"/
+const BACKGROUND_STYLE_RE = /^<pre[^>]*style="([^"]*)"[^>]*>/
 
 export function resolveOptions(options: Options) {
   const themes: IThemeRegistration[] = []
@@ -89,6 +93,8 @@ const MarkdownItShiki: MarkdownIt.PluginWithOptions<Options> = (markdownit, opti
     themes,
     darkModeThemes,
     highlightLines,
+    parseFilename,
+    filenameRe,
   } = resolveOptions(options)
 
   let syncRun: any
@@ -110,26 +116,69 @@ const MarkdownItShiki: MarkdownIt.PluginWithOptions<Options> = (markdownit, opti
     })
   }
 
+  const getStyleContent = (tag: string, regex: RegExp) => {
+    const match = regex.exec(tag)
+    let style_content = ''
+    if (match)
+      style_content = match[1]
+    return style_content
+  }
+
+  const wrapFinalContainer = (
+    light: string,
+    dark: string | undefined = undefined,
+    filename = '') => {
+    let filenameContainer = filename
+
+    const light_style_content = getStyleContent(light, BACKGROUND_STYLE_RE)
+
+    if (dark) {
+      const dark_style_content = getStyleContent(dark, BACKGROUND_STYLE_RE)
+
+      filenameContainer = `<div class="shiki-filename shiki-light" style="${light_style_content}">${filename}</div>`
+      filenameContainer += `<div class="shiki-filename shiki-dark" style="${dark_style_content}">${filename}</div>`
+    }
+    else {
+      filenameContainer = `<div class="shiki-filename" style="${light_style_content}">${filename}</div>`
+    }
+
+    return `<div class="shiki-container">${filenameContainer}${dark}${light}</div>`
+  }
+
   markdownit.options.highlight = (code, lang, attrs) => {
+    // parse highlight lines
     let lineOptions
     if (highlightLines) {
-      const match = RE.exec(attrs)
+      const match = HIGHLIGHT_RE.exec(attrs)
       if (match)
         lineOptions = attrsToLines(match[1])
     }
+
+    // parse filename
+    let filename
+    if (parseFilename) {
+      const match = (filenameRe || FILENAME_RE).exec(attrs)
+      if (match)
+        filename = match[1]
+    }
+
+    // synthesize final output
     if (darkModeThemes) {
       const dark = highlightCode(code, lang, darkModeThemes.dark, lineOptions)
-        .replace('<pre class="shiki"', '<pre class="shiki shiki-dark"')
+        .replace('<pre class="shiki', '<pre class="shiki shiki-dark')
       const light = highlightCode(code, lang || 'text', darkModeThemes.light, lineOptions)
-        .replace('<pre class="shiki"', '<pre class="shiki shiki-light"')
-      return `<div class="shiki-container">${dark}${light}</div>`
+        .replace('<pre class="shiki', '<pre class="shiki shiki-light')
+      return wrapFinalContainer(light, dark, filename)
     }
     else {
-      return highlightCode(
-        code,
-        lang || 'text',
-        undefined,
-        lineOptions,
+      return wrapFinalContainer(
+        highlightCode(
+          code,
+          lang || 'text',
+          undefined,
+          lineOptions,
+        ),
+        filename = filename,
       )
     }
   }

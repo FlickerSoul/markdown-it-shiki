@@ -100,3 +100,38 @@ console.log(res)
 ```
 ~~~
 
+### Display File Names
+
+You can assign a file name to each of the code blocks. This will be displayed at the beginning of code block. 
+
+```js
+md.use(Shiki, {
+  parseFilename: true
+  // you can pass in a regex to parse the filename 
+  // like the following 
+  // filenameRE: /regex/
+  // by default, the regex is /filename="([\w.\-_]+)"/
+})
+```
+
+Then in the markdown, you can add a `filename` attribute to the code block.
+
+~~~
+```js {1-2} filename="index.js"
+const md = new MarkdownIt()
+md.use(Shiki)
+```
+~~~
+
+A `<div class="shiki-filename">` containing the filename will be added to the beginning of the code. 
+
+You can add the following CSS to style the filename.
+
+```css
+.shiki-filename {
+  font-size: 0.8rem;
+  color: #7f7f7f;
+  padding: 1em 1.5em;
+}
+```
+
