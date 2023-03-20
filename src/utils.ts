@@ -8,6 +8,12 @@ export const FilenameProcessor: IExtraProcessor = {
     if (matched === null)
       return undefined
 
-    return `<div class="shiki-filename">${matched[1]}</div>`
+    return {
+      tag: 'div',
+      attrs: {
+        class: 'shiki-filename',
+      },
+      content: matched[1],
+    }
   },
 }

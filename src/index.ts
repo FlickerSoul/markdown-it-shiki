@@ -13,7 +13,13 @@ export enum ExtraPosition {
   after,
 }
 
-export type Processor = (matched: RegExpExecArray | null) => string | undefined
+export interface IElementIntel {
+  tag: string
+  attrs: Record<string, string>
+  content?: string
+}
+
+export type Processor = (matched: RegExpExecArray | null) => IElementIntel | undefined
 
 interface _LightOnlyProcessor {
   light: Processor
@@ -49,9 +55,6 @@ function getThemeName(theme: IThemeRegistration) {
 
 const HIGHLIGHT_RE = /{([\d,-]+)}/
 const BACKGROUND_STYLE_RE = /^<pre[^>]*style="([^"]*)"[^>]*>/
-const EXTRACT_STYLE_RE = /^(<[a-zA-z\-]+[^>]+)(style=")([^"]*)("[^>]*>)/
-const EXTRACT_CLASS_RE = /^(<[a-zA-z\-]+[^>]+)(class=")([^"]*)("[^>]*>)/
-const NO_EXTRACT_RE = /^(<[a-zA-z\-]+[^>]*)(>)/
 
 const DARK_CLASS = 'shiki-dark'
 const LIGHT_CLASS = 'shiki-light'
@@ -115,8 +118,8 @@ const attrsToLines = (attrs: string): HtmlRendererOptions['lineOptions'] => {
 }
 
 interface IProcessorOutput {
-  light?: string
-  dark?: string
+  light?: IElementIntel
+  dark?: IElementIntel
   position: ExtraPosition
 }
 
@@ -145,18 +148,43 @@ const getStyleContent = (tag: string, regex: RegExp) => {
   return style_content
 }
 
-const concatStyleAttrContent = (tag: string, regex: RegExp, content: string) => {
-  if (tag.match(regex))
-    return tag.replace(regex, `$1$2$3;${content}$4`)
+const appendStyle = (intel: IElementIntel | undefined, style: string) => {
+  if (!intel)
+    return
+
+  if (!style.endsWith(';'))
+    style += ';'
+
+  if (intel.attrs.style)
+    intel.attrs.style += `;${style}`
   else
-    return tag.replace(NO_EXTRACT_RE, `$1 style="${content};"$2`)
+    intel.attrs.style = style
 }
 
-const concatClassAttrContent = (tag: string, regex: RegExp, content: string) => {
-  if (tag.match(regex))
-    return tag.replace(regex, `$1$2$3 ${content}$4`)
+const appendClass = (intel: IElementIntel | undefined, className: string) => {
+  if (!intel)
+    return
+
+  if (intel.attrs.class)
+    intel.attrs.class += ` ${className}`
   else
-    return tag.replace(NO_EXTRACT_RE, `$1 class="${content}"$2`)
+    intel.attrs.class = className
+}
+
+export type ElementProcessor = (intel: IElementIntel | undefined) => string
+
+export const h: ElementProcessor = (intel) => {
+  if (!intel)
+    return ''
+
+  const headPartal = `<${intel.tag} ${Object.entries(intel.attrs).reduce((prev, now) => {
+      return `${prev} ${now[0]}="${now[1]}"`
+    }, '')}`
+
+  if (intel.content)
+    return `${headPartal}>${intel.content}</${intel.tag}>`
+  else
+    return `${headPartal} />`
 }
 
 const wrapFinalContainer = (
@@ -165,6 +193,7 @@ const wrapFinalContainer = (
   processedExtra: IProcessorOutput[] | undefined = undefined) => {
   let prependResult = ''
   let appendResult = ''
+
   dark = dark || ''
   processedExtra = processedExtra || []
 
@@ -172,26 +201,21 @@ const wrapFinalContainer = (
   const dark_style_content = getStyleContent(dark, BACKGROUND_STYLE_RE)
 
   processedExtra.forEach((extra) => {
-    let light = ''
-    let dark = ''
-    if (extra.light) {
-      light = extra.light
-      light = concatStyleAttrContent(light, EXTRACT_STYLE_RE, light_style_content)
-      light = concatClassAttrContent(light, EXTRACT_CLASS_RE, LIGHT_CLASS)
-    }
-    if (extra.dark) {
-      dark = extra.dark
-      dark = concatStyleAttrContent(dark, EXTRACT_STYLE_RE, dark_style_content)
-      dark = concatClassAttrContent(dark, EXTRACT_CLASS_RE, DARK_CLASS)
-    }
+    appendClass(extra.light, LIGHT_CLASS)
+    appendStyle(extra.light, light_style_content)
+    appendClass(extra.dark, DARK_CLASS)
+    appendStyle(extra.dark, dark_style_content)
+
+    const lightExtra = h(extra.light)
+    const darkExtra = h(extra.dark)
 
     if (extra.position === ExtraPosition.before) {
-      prependResult += light
-      prependResult += dark
+      prependResult += lightExtra
+      prependResult += darkExtra
     }
     else {
-      appendResult += light
-      appendResult += dark
+      appendResult += lightExtra
+      appendResult += darkExtra
     }
   })
 

@@ -150,6 +150,15 @@ where `attrRe` is the regex expression that matches the attributes passed into t
 ```
 ~~~
 
-`light` and `dark` are function that takes in a `RegExpExecArray` or `null` and returns a `string`. `null` is pass to the processor only when the `attrRe` did not match anything or the `attrRe` is undefined. If `dark` is undefined, then the `light` will be reused for the dark theme. If `dark` is `null`, then the processor will not be applied to the dark theme. The `position` field specifies where the processor should be applied. 
+`light` and `dark` are function that takes in a `RegExpExecArray` or `null` and returns a `ElementIntel` object which will be turned into a html tag string later in the processing pipeline. `null` is pass to the processor only when the `attrRe` did not match anything or the `attrRe` is undefined. An `ElementIntel` object has the following type 
 
+```typescript
+interface IElementIntel {
+  tag: string
+  attrs: Record<string, string>
+  content?: string
+}
+```
+
+If `dark` is undefined, then the `light` will be reused for the dark theme. If `dark` is `null`, then the processor will not be applied to the dark theme. The `position` field specifies where the processor should be applied. `ExtraPosition.before` and `ExtraPosition.after` are the only two options available for now, which will prepend and append, respectively, the extra html tags with respect to the actual code block. 
 
