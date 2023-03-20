@@ -100,21 +100,30 @@ console.log(res)
 ```
 ~~~
 
-### Display File Names
+### Generic Prepending and Appending Extra
 
-You can assign a file name to each of the code blocks. This will be displayed at the beginning of code block. 
+A code block will be parsed into 
+
+```html
+<div class="shiki-container">
+  <div class="shiki">
+    <code>
+    ...
+    </code>
+  </div>
+</div>
+```
+
+You can now prepend or append any html tags to the code block by specifying the extra processors in the `extra` option field. For example, the following code
 
 ```js
+import { FilenameProcessor } from '@uniob/markdown-it-shiki/utils'
 md.use(Shiki, {
-  parseFilename: true
-  // you can pass in a regex to parse the filename 
-  // like the following 
-  // filenameRE: /regex/
-  // by default, the regex is /filename="([\w.\-_]+)"/
+  extra: [FilenameProcessor]
 })
 ```
 
-Then in the markdown, you can add a `filename` attribute to the code block.
+will add a filename div to the beginning of the code block if your code block is written in the following format: 
 
 ~~~
 ```js {1-2} filename="index.js"
@@ -123,15 +132,24 @@ md.use(Shiki)
 ```
 ~~~
 
-A `<div class="shiki-filename">` containing the filename will be added to the beginning of the code. 
+An `extra` processor has the following type:
 
-You can add the following CSS to style the filename.
-
-```css
-.shiki-filename {
-  font-size: 0.8rem;
-  color: #7f7f7f;
-  padding: 1em 1.5em;
+```typescript
+interface ExtraProcessor {
+  light: Processor
+  dark?: Processor | null
+  position: ExtraPosition
+  attrRe?: RegExp
 }
 ```
+
+where `attrRe` is the regex expression that matches the attributes passed into the code block, which is the string right after the first triple tilda. 
+
+~~~
+```html {1-2} filename="hi.html"
+```
+~~~
+
+`light` and `dark` are function that takes in a `RegExpExecArray` or `null` and returns a `string`. `null` is pass to the processor only when the `attrRe` did not match anything or the `attrRe` is undefined. If `dark` is undefined, then the `light` will be reused for the dark theme. If `dark` is `null`, then the processor will not be applied to the dark theme. The `position` field specifies where the processor should be applied. 
+
 

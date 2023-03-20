@@ -27,7 +27,7 @@ interface _LightDarkProcessor {
 
 interface _IExtraProcessor {
   position: ExtraPosition
-  attrRe: RegExp
+  attrRe?: RegExp
 }
 
 export type IExtraProcessor = (_IExtraProcessor & _LightOnlyProcessor) | (_IExtraProcessor & _LightDarkProcessor)
@@ -126,7 +126,7 @@ const processExtra = (extra: IExtraProcessor[], attrs: string) => {
     return result
 
   extra.forEach((processor) => {
-    const matched = processor.attrRe.exec(attrs)
+    const matched = processor.attrRe ? processor.attrRe.exec(attrs) : null
     result.push({
       light: processor.light(matched),
       dark: processor.dark === null ? undefined : (processor.dark || processor.light)(matched),
