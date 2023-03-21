@@ -102,19 +102,23 @@ console.log(res)
 
 ### Generic Prepending and Appending Extra
 
-A code block will be parsed into 
+You can add extra html tags at the beginning or end of the code block by specifying the `extra` option field, illustrated in the following example:
+
+```js
 
 ```html
 <div class="shiki-container">
-  <div class="shiki">
+  <!-- extra html tags prepended -->
+  <pre class="shiki">
     <code>
     ...
     </code>
-  </div>
+  </pre>
+  <!-- extra html tags appended -->
 </div>
 ```
 
-You can now prepend or append any html tags to the code block by specifying the extra processors in the `extra` option field. For example, the following code
+Extra tag processors are specified the extra processors in the `extra` option field. For example, 
 
 ```js
 import { FilenameProcessor } from '@uniob/markdown-it-shiki/utils'
@@ -123,7 +127,7 @@ md.use(Shiki, {
 })
 ```
 
-will add a filename div to the beginning of the code block if your code block is written in the following format: 
+If the code block is written in the following format: 
 
 ~~~
 ```js {1-2} filename="index.js"
@@ -131,6 +135,28 @@ const md = new MarkdownIt()
 md.use(Shiki)
 ```
 ~~~
+
+the result of adding `FilenameProcessor` will be 
+
+```html
+<div class="shiki-container">
+  <div class="shiki-filename">index.js</div>
+  <pre class="shiki">
+    <code>
+    ...
+    </code>
+  </pre>
+  <!-- extra html tags appended -->
+</div>
+```
+
+The actual code block content might have gap between the prepended and appended extra tags. This is probably due to user agent default styling. You can add the following css to fix this issue:
+
+```css
+.shiki-container pre.shiki {
+  margin: 0;
+}
+```
 
 An `extra` processor has the following type:
 
