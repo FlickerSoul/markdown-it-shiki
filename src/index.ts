@@ -1,50 +1,18 @@
 import { createRequire } from 'module'
-import type { Highlighter, HtmlRendererOptions, ILanguageRegistration, IShikiTheme, IThemeRegistration } from 'shiki'
+import type { HtmlRendererOptions, IShikiTheme, IThemeRegistration } from 'shiki'
 import type MarkdownIt from 'markdown-it'
 import { createSyncFn } from 'synckit'
+import type { DarkModeThemes, ElementProcessorType, IElementIntel, IExtraProcessor, IProcessorOutput, Options } from './types'
+import { ExtraPosition } from './types'
 
-export interface DarkModeThemes {
-  dark: IThemeRegistration
-  light: IThemeRegistration
-}
-
-export enum ExtraPosition {
-  before,
-  after,
-}
-
-export interface IElementIntel {
-  tag: string
-  attrs: Record<string, string>
-  content?: string
-}
-
-export type Processor = (matched: RegExpExecArray | null) => IElementIntel | undefined
-
-interface _LightOnlyProcessor {
-  light: Processor
-  dark: null
-}
-
-interface _LightDarkProcessor {
-  light: Processor
-  dark?: Processor
-}
-
-interface _IExtraProcessor {
-  position: ExtraPosition
-  attrRe?: RegExp
-}
-
-export type IExtraProcessor = (_IExtraProcessor & _LightOnlyProcessor) | (_IExtraProcessor & _LightDarkProcessor)
-
-export interface Options {
-  theme?: IThemeRegistration | DarkModeThemes
-  langs?: ILanguageRegistration[]
-  timeout?: number
-  highlighter?: Highlighter
-  highlightLines?: boolean
-  extra?: IExtraProcessor[]
+export {
+  ExtraPosition,
+  IElementIntel,
+  IExtraProcessor,
+  IProcessorOutput,
+  ElementProcessorType,
+  DarkModeThemes,
+  Options,
 }
 
 function getThemeName(theme: IThemeRegistration) {
@@ -53,9 +21,12 @@ function getThemeName(theme: IThemeRegistration) {
   return (theme as IShikiTheme).name
 }
 
+// capture highlight
 const HIGHLIGHT_RE = /{([\d,-]+)}/
+// capture the highlight color of the actual code block
 const BACKGROUND_STYLE_RE = /^<pre[^>]*style="([^"]*)"[^>]*>/
 
+// the classes used to distinguish between dark and light mode
 const DARK_CLASS = 'shiki-dark'
 const LIGHT_CLASS = 'shiki-light'
 
@@ -117,12 +88,6 @@ const attrsToLines = (attrs: string): HtmlRendererOptions['lineOptions'] => {
   }))
 }
 
-interface IProcessorOutput {
-  light?: IElementIntel
-  dark?: IElementIntel
-  position: ExtraPosition
-}
-
 const processExtra = (extra: IExtraProcessor[], attrs: string) => {
   const result: IProcessorOutput[] = []
   if (extra === undefined)
@@ -171,9 +136,7 @@ const appendClass = (intel: IElementIntel | undefined, className: string) => {
     intel.attrs.class = className
 }
 
-export type ElementProcessor = (intel: IElementIntel | undefined) => string
-
-export const h: ElementProcessor = (intel) => {
+export const h: ElementProcessorType = (intel) => {
   if (!intel)
     return ''
 
