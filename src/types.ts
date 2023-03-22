@@ -54,7 +54,7 @@ export enum ExtraPosition {
 export interface IElementIntel {
   tag: string
   attrs: Record<string, string>
-  content?: string
+  content?: string | IElementIntel
 }
 
 /**

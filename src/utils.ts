@@ -11,7 +11,7 @@ import { ExtraPosition } from './types'
 * @returns the element to be inserted
 */
 export const FilenameProcessor: IExtraProcessor = {
-  attrRe: /filename="([\w.\-_]+)"/,
+  attrRe: /filename="([\w.\-_\/]+)"/,
   position: ExtraPosition.before,
   light: (matched) => {
     if (matched === null)

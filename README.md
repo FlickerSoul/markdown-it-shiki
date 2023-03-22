@@ -182,7 +182,7 @@ where `attrRe` is the regex expression that matches the attributes passed into t
 interface IElementIntel {
   tag: string
   attrs: Record<string, string>
-  content?: string
+  content?: string | IElementIntel
 }
 ```
 

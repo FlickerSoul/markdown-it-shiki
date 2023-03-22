@@ -145,7 +145,10 @@ export const h: ElementProcessorType = (intel) => {
     }, '')}`
 
   if (intel.content)
-    return `${headPartal}>${intel.content}</${intel.tag}>`
+    if (typeof intel.content === 'string')
+      return `${headPartal}>${intel.content}</${intel.tag}>`
+    else
+      return `${headPartal}>${h(intel.content)}</${intel.tag}>`
   else
     return `${headPartal} />`
 }
@@ -182,7 +185,7 @@ const wrapFinalContainer = (
     }
   })
 
-  return `<div class="shiki-container">${prependResult}${dark}${light}${appendResult}</div>`
+  return `<div class="shiki-container" style="position: relative;">${prependResult}${dark}${light}${appendResult}</div>`
 }
 
 const MarkdownItShiki: MarkdownIt.PluginWithOptions<Options> = (markdownit, options = {}) => {
