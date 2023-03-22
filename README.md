@@ -170,7 +170,7 @@ div.shiki-container {
 }
 
 div.shiki-container:hover {
-  --shiki-float-visible: div;
+  --shiki-float-visible: block;
 }
 
 .shiki-float {
