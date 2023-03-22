@@ -158,6 +158,48 @@ The actual code block content might have gap between the prepended and appended 
 }
 ```
 
+There are four positions you can append, 'before', 'after', 'f_top_right', 'f_bottom_right', 'f_top_left', 'f_bottom_left'. The 'before' and 'after' positions will direct the extra tag to be prepended or appended to the actual code block. The positions with names starting with 'f_' will direct the extra tag to floated on the according corners. You need to add the following CSS to your stylesheet. Every class except `shiki-float-hide` is added automatically. 
+
+```css
+div.shiki-container {
+  --shiki-float-visible: none;
+  --float-right-dist: 10px;
+  --float-top-dist: 10px;
+  --float-bottom-dist: 10px;
+  --float-left-dist: 10px;
+}
+
+div.shiki-container:hover {
+  --shiki-float-visible: div;
+}
+
+.shiki-float {
+  position: absolute;
+}
+
+.shiki-float-right {
+  right: var(--float-right-dist);
+}
+
+.shiki-float-top {
+  top: var(--float-top-dist);
+}
+
+.shiki-float-bottom {
+  bottom: var(--float-bottom-dist);
+}
+
+.shiki-float-left {
+  left: var(--float-left-dist);
+}
+
+.shiki-float-hide {
+  display: var(--shiki-float-visible)
+}
+```
+
+
+
 An `extra` processor has the following type:
 
 ```typescript

@@ -34,9 +34,21 @@ export interface Options {
 * @field after - after the code element
 */
 export enum ExtraPosition {
-  before,
-  after,
+  before = 0,
+  f_top_right = 1,
+  f_top_left = 2,
+  f_bottom_right = 3,
+  f_bottom_left = 4,
+  after = 5,
 }
+
+export const PREPENDING_POSITIONS = [ExtraPosition.before, ExtraPosition.f_top_right, ExtraPosition.f_top_left] as const
+export const APPENDING_POSITIONS = [ExtraPosition.f_bottom_right, ExtraPosition.f_bottom_left, ExtraPosition.after] as const
+export const FLOATING_POSITIONS = [ExtraPosition.f_top_right, ExtraPosition.f_bottom_right, ExtraPosition.f_top_left, ExtraPosition.f_bottom_left] as Readonly<ExtraPosition[]>
+export const FLOATING_TOP = [ExtraPosition.f_top_right, ExtraPosition.f_top_left] as Readonly<ExtraPosition[]>
+export const FLOATING_BOTTOM = [ExtraPosition.f_bottom_right, ExtraPosition.f_bottom_left] as Readonly<ExtraPosition[]>
+export const FLOATING_RIGHT = [ExtraPosition.f_top_right, ExtraPosition.f_bottom_right] as Readonly<ExtraPosition[]>
+export const FLOATING_LEFT = [ExtraPosition.f_top_left, ExtraPosition.f_bottom_left] as Readonly<ExtraPosition[]>
 
 /**
 * The html element to be inserted
@@ -54,7 +66,7 @@ export enum ExtraPosition {
 export interface IElementIntel {
   tag: string
   attrs: Record<string, string>
-  content?: string | IElementIntel
+  content?: string | IElementIntel | IElementIntel[]
 }
 
 /**

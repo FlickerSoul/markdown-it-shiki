@@ -2,8 +2,7 @@ import { createRequire } from 'module'
 import type { HtmlRendererOptions, IShikiTheme, IThemeRegistration } from 'shiki'
 import type MarkdownIt from 'markdown-it'
 import { createSyncFn } from 'synckit'
-import type { DarkModeThemes, ElementProcessorType, IElementIntel, IExtraProcessor, IProcessorOutput, Options } from './types'
-import { ExtraPosition } from './types'
+import { APPENDING_POSITIONS, DarkModeThemes, ElementProcessorType, ExtraPosition, FLOATING_BOTTOM, FLOATING_LEFT, FLOATING_POSITIONS, FLOATING_RIGHT, FLOATING_TOP, IElementIntel, IExtraProcessor, IProcessorOutput, Options, PREPENDING_POSITIONS } from './types'
 
 export {
   ExtraPosition,
@@ -29,6 +28,15 @@ const BACKGROUND_STYLE_RE = /^<pre[^>]*style="([^"]*)"[^>]*>/
 // the classes used to distinguish between dark and light mode
 const DARK_CLASS = 'shiki-dark'
 const LIGHT_CLASS = 'shiki-light'
+const FLOAT_CLASS = 'shiki-float'
+const FLOAT_CLASS_HIDE = 'shiki-float-hide'
+const FLOAT_POS_CLASS_MAPPING = {
+  'shiki-float-top': FLOATING_TOP,
+  'shiki-float-bottom': FLOATING_BOTTOM,
+  'shiki-float-right': FLOATING_RIGHT,
+  'shiki-float-left': FLOATING_LEFT,
+}
+const FLOAT_POS_CLASS_ITER = Object.entries(FLOAT_POS_CLASS_MAPPING)
 
 export function resolveOptions(options: Options) {
   const themes: IThemeRegistration[] = []
@@ -140,25 +148,27 @@ export const h: ElementProcessorType = (intel) => {
   if (!intel)
     return ''
 
-  const headPartal = `<${intel.tag} ${Object.entries(intel.attrs).reduce((prev, now) => {
+  const headPartal = `<${intel.tag}${Object.entries(intel.attrs).reduce((prev, now) => {
       return `${prev} ${now[0]}="${now[1]}"`
     }, '')}`
 
-  if (intel.content)
+  if (intel.content) {
     if (typeof intel.content === 'string')
       return `${headPartal}>${intel.content}</${intel.tag}>`
+    else if (Array.isArray(intel.content))
+      return `${headPartal}>${intel.content.reduce((prev, now) => prev + h(now), '')}</${intel.tag}>`
     else
       return `${headPartal}>${h(intel.content)}</${intel.tag}>`
-  else
-    return `${headPartal} />`
+  }
+  else { return `${headPartal} />` }
 }
 
 const wrapFinalContainer = (
   light: string,
   dark: string | undefined = undefined,
   processedExtra: IProcessorOutput[] | undefined = undefined) => {
-  let prependResult = ''
-  let appendResult = ''
+  const lightExtraContents: string[] = Object.keys(ExtraPosition).map(() => '')
+  const darkExtraContents: string[] = Object.keys(ExtraPosition).map(() => '')
 
   dark = dark || ''
   processedExtra = processedExtra || []
@@ -172,20 +182,29 @@ const wrapFinalContainer = (
     appendClass(extra.dark, DARK_CLASS)
     appendStyle(extra.dark, dark_style_content)
 
+    if (FLOATING_POSITIONS.includes(extra.position)) {
+      appendClass(extra.light, FLOAT_CLASS)
+      appendClass(extra.dark, FLOAT_CLASS)
+    }
+
+    for (const [posClass, posCheckList] of FLOAT_POS_CLASS_ITER) {
+      if (posCheckList.includes(extra.position)) {
+        appendClass(extra.light, posClass)
+        appendClass(extra.dark, posClass)
+      }
+    }
+
     const lightExtra = h(extra.light)
     const darkExtra = h(extra.dark)
 
-    if (extra.position === ExtraPosition.before) {
-      prependResult += lightExtra
-      prependResult += darkExtra
-    }
-    else {
-      appendResult += lightExtra
-      appendResult += darkExtra
-    }
+    lightExtraContents[extra.position] += lightExtra
+    darkExtraContents[extra.position] += darkExtra
   })
 
-  return `<div class="shiki-container" style="position: relative;">${prependResult}${dark}${light}${appendResult}</div>`
+  const before = PREPENDING_POSITIONS.map(i => [lightExtraContents[i], darkExtraContents[i]]).reduce((prev, [light, dark]) => prev + light + dark, '')
+  const after = APPENDING_POSITIONS.map(i => [lightExtraContents[i], darkExtraContents[i]]).reduce((prev, [light, dark]) => prev + light + dark, '')
+
+  return `<div class="shiki-container" style="position: relative;">${before}${dark}${light}${after}</div>`
 }
 
 const MarkdownItShiki: MarkdownIt.PluginWithOptions<Options> = (markdownit, options = {}) => {
