@@ -96,7 +96,7 @@ const attrsToLines = (attrs: string): HtmlRendererOptions['lineOptions'] => {
   }))
 }
 
-const processExtra = (extra: IExtraProcessor[], attrs: string) => {
+const processExtra = (extra: IExtraProcessor[], attrs: string, lang: string, code: string) => {
   const result: IProcessorOutput[] = []
   if (extra === undefined)
     return result
@@ -104,8 +104,8 @@ const processExtra = (extra: IExtraProcessor[], attrs: string) => {
   extra.forEach((processor) => {
     const matched = processor.attrRe ? processor.attrRe.exec(attrs) : null
     result.push({
-      light: processor.light(matched),
-      dark: processor.dark === null ? null : (processor.dark || processor.light)(matched),
+      light: processor.light(matched, lang, code),
+      dark: processor.dark === null ? null : (processor.dark || processor.light)(matched, lang, code),
       position: processor.position,
     })
   })
@@ -256,7 +256,7 @@ const MarkdownItShiki: MarkdownIt.PluginWithOptions<Options> = (markdownit, opti
     }
 
     // parse extra
-    const processedExtra = processExtra(extra, attrs)
+    const processedExtra = processExtra(extra, attrs, lang, code)
 
     // synthesize final output
     if (darkModeThemes) {

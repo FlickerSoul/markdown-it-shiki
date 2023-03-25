@@ -72,7 +72,7 @@ export interface IElementIntel {
 /**
 * The processor to be used for extra elements
 */
-export type Processor = (matched: RegExpExecArray | null) => IElementIntel | undefined
+export type Processor = (matched: RegExpExecArray | null, lang: string, code: string) => IElementIntel | undefined
 
 interface _LightOnlyProcessor {
   light: Processor
