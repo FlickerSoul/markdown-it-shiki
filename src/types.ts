@@ -107,7 +107,7 @@ export type IExtraProcessor = (_IExtraProcessor & _LightOnlyProcessor) | (_IExtr
 */
 export interface IProcessorOutput {
   light?: IElementIntel
-  dark?: IElementIntel
+  dark?: IElementIntel | null
   position: ExtraPosition
 }
 

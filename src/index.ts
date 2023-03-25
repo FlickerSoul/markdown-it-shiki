@@ -105,7 +105,7 @@ const processExtra = (extra: IExtraProcessor[], attrs: string) => {
     const matched = processor.attrRe ? processor.attrRe.exec(attrs) : null
     result.push({
       light: processor.light(matched),
-      dark: processor.dark === null ? undefined : (processor.dark || processor.light)(matched),
+      dark: processor.dark === null ? null : (processor.dark || processor.light)(matched),
       position: processor.position,
     })
   })
@@ -167,8 +167,7 @@ const wrapFinalContainer = (
   light: string,
   dark: string | undefined = undefined,
   processedExtra: IProcessorOutput[] | undefined = undefined) => {
-  const lightExtraContents: string[] = Object.keys(ExtraPosition).map(() => '')
-  const darkExtraContents: string[] = Object.keys(ExtraPosition).map(() => '')
+  const extraContentsOnPosition: string[] = Object.keys(ExtraPosition).map(() => '')
 
   dark = dark || ''
   processedExtra = processedExtra || []
@@ -177,10 +176,20 @@ const wrapFinalContainer = (
   const dark_style_content = getStyleContent(dark, BACKGROUND_STYLE_RE)
 
   processedExtra.forEach((extra) => {
-    appendClass(extra.light, LIGHT_CLASS)
-    appendStyle(extra.light, light_style_content)
-    appendClass(extra.dark, DARK_CLASS)
-    appendStyle(extra.dark, dark_style_content)
+    if (extra.dark !== null) {
+      // if extra dark is not null,
+      // then the element is not universal
+      // add theme specific classes to both light and dark mode
+      appendClass(extra.light, LIGHT_CLASS)
+      appendStyle(extra.light, light_style_content)
+      appendClass(extra.dark, DARK_CLASS)
+      appendStyle(extra.dark, dark_style_content)
+    }
+    else {
+      // if extra dark is null, then the element is universal
+      // don't add theme specific classes, and set dark to undefined
+      extra.dark = undefined
+    }
 
     if (FLOATING_POSITIONS.includes(extra.position)) {
       appendClass(extra.light, FLOAT_CLASS)
@@ -197,14 +206,14 @@ const wrapFinalContainer = (
     const lightExtra = h(extra.light)
     const darkExtra = h(extra.dark)
 
-    lightExtraContents[extra.position] += lightExtra
-    darkExtraContents[extra.position] += darkExtra
+    extraContentsOnPosition[extra.position] += lightExtra
+    extraContentsOnPosition[extra.position] += darkExtra
   })
 
-  const before = PREPENDING_POSITIONS.map(i => [lightExtraContents[i], darkExtraContents[i]]).reduce((prev, [light, dark]) => prev + light + dark, '')
-  const after = APPENDING_POSITIONS.map(i => [lightExtraContents[i], darkExtraContents[i]]).reduce((prev, [light, dark]) => prev + light + dark, '')
+  const before = PREPENDING_POSITIONS.map(i => extraContentsOnPosition[i]).reduce((prev, exc) => prev + exc, '')
+  const after = APPENDING_POSITIONS.map(i => extraContentsOnPosition[i]).reduce((prev, exc) => prev + exc, '')
 
-  return `<div class="shiki-container" style="position: relative;">${before}${dark}${light}${after}</div>`
+  return `<div class="shiki-container" style="position: relative;">${before}${light}${dark}${after}</div>`
 }
 
 const MarkdownItShiki: MarkdownIt.PluginWithOptions<Options> = (markdownit, options = {}) => {
