@@ -1,6 +1,6 @@
 {
   "name": "@uniob/markdown-it-shiki",
-  "version": "0.8.0r6",
+  "version": "0.8.0r7",
   "packageManager": "pnpm@7.12.0",
   "description": "Markdown It plugin for Shiki",
   "author": "Anthony Fu <anthonyfu117@hotmail.com>",
