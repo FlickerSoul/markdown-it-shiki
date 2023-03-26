@@ -121,7 +121,7 @@ const getStyleContent = (tag: string, regex: RegExp) => {
   return style_content
 }
 
-const appendStyle = (intel: IElementIntel | undefined, style: string) => {
+const prependStyle = (intel: IElementIntel | undefined, style: string) => {
   if (!intel)
     return
 
@@ -129,7 +129,7 @@ const appendStyle = (intel: IElementIntel | undefined, style: string) => {
     style += ';'
 
   if (intel.attrs.style)
-    intel.attrs.style += `;${style}`
+    intel.attrs.style = `${style};${intel.attrs.style}`
   else
     intel.attrs.style = style
 }
@@ -181,9 +181,9 @@ const wrapFinalContainer = (
       // then the element is not universal
       // add theme specific classes to both light and dark mode
       appendClass(extra.light, LIGHT_CLASS)
-      appendStyle(extra.light, light_style_content)
+      prependStyle(extra.light, light_style_content)
       appendClass(extra.dark, DARK_CLASS)
-      appendStyle(extra.dark, dark_style_content)
+      prependStyle(extra.dark, dark_style_content)
     }
     else {
       // if extra dark is null, then the element is universal
